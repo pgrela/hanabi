@@ -1,5 +1,6 @@
 package com.pgrela.games.hanabi.domain;
 
+import com.pgrela.games.hanabi.domain.hint.ColorHintAnyone;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -7,7 +8,7 @@ import java.util.Queue;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class Game {
+public class Game implements Table {
 
   private Deck deck;
   private Fireworks fireworks;
@@ -17,16 +18,16 @@ public class Game {
   private boolean lastRound;
   private GamePlayer lastPlayer;
   private boolean gameFinished;
-  private List<? extends PlayAware> playAwares;
+  private List<? extends Spectator> playAwares;
   private List<PlayerWithHand> players;
   private Map<GamePlayer, Hand> hands;
   private Map<SomeonesHand, GamePlayer> playersByHands;
 
-  private Queue<Consumer<PlayAware>> events = new LinkedList<>();
+  private Queue<Consumer<Spectator>> events = new LinkedList<>();
 
   Game(Deck deck, Fireworks fireworks, int availableHintTokens, int usedHintTokens,
       int availableBlownTokens, boolean lastRound, GamePlayer lastPlayer, boolean gameFinished,
-      List<? extends PlayAware> playAwares,
+      List<? extends Spectator> playAwares,
       List<PlayerWithHand> players) {
     this.deck = deck;
     this.fireworks = fireworks;
@@ -68,7 +69,7 @@ public class Game {
     List<UnknownCard> indicatedCards = theHand.getRealCards().stream()
         .filter(h -> h.getColor().equals(color))
         .collect(Collectors.toList());
-    giveHint(new ColorHint(player, playersByHands.get(hand), indicatedCards, color));
+    giveHint(new ColorHintAnyone(player, playersByHands.get(hand), indicatedCards, color));
   }
 
   void giveHint(Player player, SomeonesHand hand, Number number) {
@@ -79,14 +80,14 @@ public class Game {
     giveHint(new NumberHint(player, playersByHands.get(hand), indicatedCards, number));
   }
 
-  void giveHint(ColorHint colorHint) {
+  void giveHint(ColorHintAnyone colorHint) {
     decreaseHintTokens();
-    events.add((playAware -> playAware.hintGiven(colorHint)));
+    events.add((spectator -> spectator.hintGiven(colorHint)));
   }
 
   void giveHint(NumberHint numberHint) {
     decreaseHintTokens();
-    events.add((playAware -> playAware.hintGiven(numberHint)));
+    events.add((spectator -> spectator.hintGiven(numberHint)));
   }
 
   CardPlayedOutcome playCard(Player player, UnknownCard unknownCard) {
@@ -94,11 +95,11 @@ public class Game {
     hands.get(player).remove(card);
     if (fireworks.canAccept(card)) {
       fireworks.add(card);
-      events.add((playAware -> playAware.cardPlayed(player, card, CardPlayedOutcome.SUCCESS)));
+      events.add((spectator -> spectator.cardPlayed(player, card, CardPlayedOutcome.SUCCESS)));
       return CardPlayedOutcome.SUCCESS;
     } else {
       blow();
-      events.add((playAware -> playAware.cardPlayed(player, card, CardPlayedOutcome.FAIL)));
+      events.add((spectator -> spectator.cardPlayed(player, card, CardPlayedOutcome.FAIL)));
       return CardPlayedOutcome.FAIL;
     }
   }
@@ -110,13 +111,13 @@ public class Game {
     }
     hands.get(player).remove(card);
     increaseHintTokens();
-    events.add((playAware -> playAware.cardDiscarded(player, card)));
+    events.add((spectator -> spectator.cardDiscarded(player, card)));
   }
 
   Card drawCard(Player player) {
     Card card = deck.draw();
     hands.get(player).add(card);
-    events.add((playAware -> playAware.cardDiscarded(player, card)));
+    events.add((spectator -> spectator.cardDiscarded(player, card)));
     return card;
   }
 
@@ -130,7 +131,7 @@ public class Game {
     if (isDeckEmpty()) {
       lastRound = true;
       lastPlayer = player;
-      events.add((playAware -> playAware.lastCardDrawn(player)));
+      events.add((spectator -> spectator.lastCardDrawn(player)));
     }
   }
 
@@ -153,7 +154,7 @@ public class Game {
     }
     --availableBlownTokens;
     if (availableBlownTokens == 0) {
-      events.add(PlayAware::gameFinished);
+      events.add(Spectator::gameFinished);
     }
   }
 

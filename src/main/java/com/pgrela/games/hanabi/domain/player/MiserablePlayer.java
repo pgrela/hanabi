@@ -3,16 +3,15 @@ package com.pgrela.games.hanabi.domain.player;
 import com.pgrela.games.hanabi.domain.Card;
 import com.pgrela.games.hanabi.domain.CardPlayedOutcome;
 import com.pgrela.games.hanabi.domain.Color;
-import com.pgrela.games.hanabi.domain.ColorHint;
-import com.pgrela.games.hanabi.domain.Game;
+import com.pgrela.games.hanabi.domain.hint.ColorHintAnyone;
 import com.pgrela.games.hanabi.domain.GamePlayer;
 import com.pgrela.games.hanabi.domain.KnownCard;
 import com.pgrela.games.hanabi.domain.MyHand;
 import com.pgrela.games.hanabi.domain.Number;
-import com.pgrela.games.hanabi.domain.NumberHint;
-import com.pgrela.games.hanabi.domain.PlayAware;
+import com.pgrela.games.hanabi.domain.Spectator;
 import com.pgrela.games.hanabi.domain.Player;
 import com.pgrela.games.hanabi.domain.SomeonesHand;
+import com.pgrela.games.hanabi.domain.Table;
 import com.pgrela.games.hanabi.domain.Turn;
 import com.pgrela.games.hanabi.domain.UnknownCard;
 import java.util.HashSet;
@@ -21,11 +20,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-public class MiserablePlayer implements PlayAware, Player, GamePlayer {
+public class MiserablePlayer implements Spectator, GamePlayer {
 
-  private List<SomeonesHand> nextPlayers;
+  private List<Player> nextPlayers;
   private MyHand myHand;
-  private Game game;
+  private Table table;
 
   private LinkedList<Turn> goodTurns = new LinkedList<>();
   private LinkedList<UnknownCard> cardsToPlay = new LinkedList<>();
@@ -34,10 +33,10 @@ public class MiserablePlayer implements PlayAware, Player, GamePlayer {
   }
 
 
-  public void setup(List<SomeonesHand> nextPlayers, MyHand myHand, Game game) {
+  public void setup(List<Player> nextPlayers, MyHand myHand, Table table) {
     this.nextPlayers = nextPlayers;
     this.myHand = myHand;
-    this.game = game;
+    this.table = table;
   }
 
   @Override
@@ -51,12 +50,13 @@ public class MiserablePlayer implements PlayAware, Player, GamePlayer {
         }
 
       }
-      if (game.areHintTokensAvailable()) {
-        for (SomeonesHand hand : nextPlayers) {
+      if (table.areHintTokensAvailable()) {
+        for (Player player : nextPlayers) {
+          SomeonesHand hand = player.getHand();
           Set<Color> seenColors = new HashSet<>();
           Set<Number> seenNumbers = new HashSet<>();
           for (KnownCard card : hand.getKnownCards()) {
-            if (game.getFireworks().canAccept(card)) {
+            if (table.getFireworks().canAccept(card)) {
               if (!seenColors.contains(card.getColor())) {
                 return Turn.hint(hand, card.getColor());
               }
@@ -76,7 +76,7 @@ public class MiserablePlayer implements PlayAware, Player, GamePlayer {
   }
 
   @Override
-  public void hintGiven(ColorHint colorHint) {
+  public void hintGiven(ColorHintAnyone colorHint) {
     if (colorHint.getToPlayer().equals(this)) {
       myHand.getCards().stream().filter(card -> colorHint.getIndicatedCards().contains(card))
           .limit(1).forEach(cardsToPlay::add);

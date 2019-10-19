@@ -5,7 +5,7 @@ import java.util.stream.Stream;
 
 public class Turn {
 
-  private BiConsumer<Game, Player>[] actions;
+  private BiConsumer<Game, GamePlayer>[] actions;
 
   public Turn(BiConsumer<Game, Player>... actions) {
     this.actions = actions;

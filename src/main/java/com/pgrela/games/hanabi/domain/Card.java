@@ -21,6 +21,11 @@ public class Card implements KnownCard, UnknownCard {
     return number;
   }
 
+  @Override
+  public UnknownCard unknown() {
+    return this;
+  }
+
   public Color getColor() {
     return color;
   }

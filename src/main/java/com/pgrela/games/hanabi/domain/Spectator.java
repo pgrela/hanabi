@@ -1,8 +1,10 @@
 package com.pgrela.games.hanabi.domain;
 
-public interface PlayAware {
+import com.pgrela.games.hanabi.domain.hint.ColorHintAnyone;
 
-  default void hintGiven(ColorHint colorHint) {
+public interface Spectator {
+
+  default void hintGiven(ColorHintAnyone colorHint) {
   }
 
   default void hintGiven(NumberHint numberHint) {
