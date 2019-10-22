@@ -1,8 +1,12 @@
 package com.pgrela.games.hanabi.domain;
 
+import com.pgrela.games.hanabi.domain.api.KnownCard;
+import com.pgrela.games.hanabi.domain.api.MyHand;
+import com.pgrela.games.hanabi.domain.api.SomeonesHand;
+import com.pgrela.games.hanabi.domain.api.UnknownCard;
+
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 public class Hand implements MyHand, SomeonesHand {
 
@@ -12,25 +16,17 @@ public class Hand implements MyHand, SomeonesHand {
     this.cards = cards;
   }
 
-  void remove(Card card) {
+  KnownCard remove(UnknownCard unknownCard) {
+    Card card = (Card) unknownCard;
     if (!cards.contains(card)) {
       throw new IllegalGameMoveException("Does not have the card");
     }
     cards.remove(card);
+    return card;
   }
 
-  void add(Card card) {
-    cards.add(card);
-  }
-
-  @Override
-  public Card getFirstCard() {
-    return cards.get(0);
-  }
-
-  @Override
-  public UnknownCard getMostRecentCard() {
-    return cards.get(cards.size() - 1);
+  void add(int index, Card card) {
+    cards.add(index,card);
   }
 
   public List<UnknownCard> getCards() {
@@ -44,5 +40,9 @@ public class Hand implements MyHand, SomeonesHand {
   @Override
   public List<KnownCard> getKnownCards() {
     return Collections.unmodifiableList(cards);
+  }
+
+  public boolean contains(UnknownCard card) {
+    return cards.contains(card);
   }
 }

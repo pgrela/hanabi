@@ -1,5 +1,8 @@
 package com.pgrela.games.hanabi.domain;
 
+import com.pgrela.games.hanabi.domain.api.KnownCard;
+import com.pgrela.games.hanabi.domain.api.UnknownCard;
+
 import java.util.Collection;
 import java.util.stream.Collectors;
 

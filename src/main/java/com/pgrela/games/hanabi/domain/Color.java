@@ -11,6 +11,7 @@ public class Color {
   public static final Color GREEN = new Color("GREEN");
   public static final Color RED = new Color("RED");
   public static final Color BLUE = new Color("BLUE");
+  public static final Color RAINBOW = new Color("RAINBOW");
 
   public static final List<Color> BASIC_COLORS = Arrays.asList(WHITE, YELLOW, GREEN, RED, BLUE);
 

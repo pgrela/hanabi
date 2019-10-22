@@ -1,4 +1,4 @@
-package com.pgrela.games.hanabi.domain;
+package com.pgrela.games.hanabi.domain.api;
 
 public interface Table {
 

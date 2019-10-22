@@ -1,13 +1,16 @@
 package com.pgrela.games.hanabi.domain;
 
+import com.pgrela.games.hanabi.domain.api.OtherPlayer;
+import com.pgrela.games.hanabi.domain.api.UnknownCard;
+
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 public class Turn {
 
-  private BiConsumer<Game, GamePlayer>[] actions;
+  private BiConsumer<Game, ThePlayer>[] actions;
 
-  public Turn(BiConsumer<Game, Player>... actions) {
+  public Turn(BiConsumer<Game, ThePlayer>... actions) {
     this.actions = actions;
   }
 
@@ -25,26 +28,26 @@ public class Turn {
     );
   }
 
-  private static void drawCard(Game game, Player player) {
+  private static void drawCard(Game game, ThePlayer player) {
     if (!game.isDeckEmpty()) {
       game.drawCard(player);
     }
   }
 
-  public static Turn hint(SomeonesHand hand, Color color) {
+  public static Turn hint(OtherPlayer ohterPlayer, Color color) {
     return new Turn(
-        (game, player)->game.giveHint(player, hand, color)
+        (game, player)->game.giveHint(player, ohterPlayer, color)
     );
   }
 
-  public static Turn hint(SomeonesHand hand, Number number) {
+  public static Turn hint(OtherPlayer ohterPlayer, Number number) {
     return new Turn(
-        (game, player)->game.giveHint(player, hand, number)
+        (game, player)->game.giveHint(player, ohterPlayer, number)
     );
   }
 
 
-  public void execute(Game game, Player player) {
+  public void execute(Game game, ThePlayer player) {
     Stream.of(actions).forEach(action -> action.accept(game, player));
   }
 

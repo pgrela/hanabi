@@ -1,114 +1,104 @@
 package com.pgrela.games.hanabi.domain.player;
 
-import com.pgrela.games.hanabi.domain.Card;
-import com.pgrela.games.hanabi.domain.CardPlayedOutcome;
 import com.pgrela.games.hanabi.domain.Color;
-import com.pgrela.games.hanabi.domain.hint.ColorHintAnyone;
-import com.pgrela.games.hanabi.domain.GamePlayer;
-import com.pgrela.games.hanabi.domain.KnownCard;
-import com.pgrela.games.hanabi.domain.MyHand;
 import com.pgrela.games.hanabi.domain.Number;
-import com.pgrela.games.hanabi.domain.Spectator;
-import com.pgrela.games.hanabi.domain.Player;
-import com.pgrela.games.hanabi.domain.SomeonesHand;
-import com.pgrela.games.hanabi.domain.Table;
 import com.pgrela.games.hanabi.domain.Turn;
-import com.pgrela.games.hanabi.domain.UnknownCard;
+import com.pgrela.games.hanabi.domain.api.CardPlayedOutcome;
+import com.pgrela.games.hanabi.domain.api.ColorHintToMe;
+import com.pgrela.games.hanabi.domain.api.KnownCard;
+import com.pgrela.games.hanabi.domain.api.MyHand;
+import com.pgrela.games.hanabi.domain.api.NumberHintToMe;
+import com.pgrela.games.hanabi.domain.api.OtherPlayer;
+import com.pgrela.games.hanabi.domain.api.Player;
+import com.pgrela.games.hanabi.domain.api.SomeonesHand;
+import com.pgrela.games.hanabi.domain.api.Table;
+import com.pgrela.games.hanabi.domain.api.UnknownCard;
+
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-public class MiserablePlayer implements Spectator, GamePlayer {
+public class MiserablePlayer implements Player {
 
-  private List<Player> nextPlayers;
-  private MyHand myHand;
-  private Table table;
+    private List<OtherPlayer> nextPlayers;
+    private MyHand myHand;
+    private Table table;
 
-  private LinkedList<Turn> goodTurns = new LinkedList<>();
-  private LinkedList<UnknownCard> cardsToPlay = new LinkedList<>();
+    private LinkedList<UnknownCard> cardsToPlay = new LinkedList<>();
 
-  public MiserablePlayer() {
-  }
+    public MiserablePlayer() {
+    }
 
 
-  public void setup(List<Player> nextPlayers, MyHand myHand, Table table) {
-    this.nextPlayers = nextPlayers;
-    this.myHand = myHand;
-    this.table = table;
-  }
+    public void setup(List<OtherPlayer> nextPlayers, MyHand myHand, Table table) {
+        this.nextPlayers = nextPlayers;
+        this.myHand = myHand;
+        this.table = table;
+    }
 
-  @Override
-  public Turn doTheMove() {
-    if (goodTurns.isEmpty()) {
-      if (!cardsToPlay.isEmpty()) {
-        Optional<Turn> first = cardsToPlay.stream()
-            .filter(card -> myHand.getCards().contains(card)).map(Turn::play).findFirst();
-        if (first.isPresent()) {
-          return first.get();
-        }
-
-      }
-      if (table.areHintTokensAvailable()) {
-        for (Player player : nextPlayers) {
-          SomeonesHand hand = player.getHand();
-          Set<Color> seenColors = new HashSet<>();
-          Set<Number> seenNumbers = new HashSet<>();
-          for (KnownCard card : hand.getKnownCards()) {
-            if (table.getFireworks().canAccept(card)) {
-              if (!seenColors.contains(card.getColor())) {
-                return Turn.hint(hand, card.getColor());
-              }
-              if (!seenNumbers.contains(card.getNumber())) {
-                return Turn.hint(hand, card.getNumber());
-              }
+    @Override
+    public Turn doTheMove() {
+        if (!cardsToPlay.isEmpty()) {
+            Optional<Turn> first = cardsToPlay.stream()
+                    .filter(card -> myHand.getCards().contains(card)).map(Turn::play).findFirst();
+            if (first.isPresent()) {
+                return first.get();
             }
-            seenColors.add(card.getColor());
-            seenNumbers.add(card.getNumber());
-          }
+
         }
-      }
-    } else {
-      return goodTurns.pollFirst();
+        if (table.areHintTokensAvailable()) {
+            for (OtherPlayer player : nextPlayers) {
+                SomeonesHand hand = player.getHand();
+                Set<Color> seenColors = new HashSet<>();
+                Set<Number> seenNumbers = new HashSet<>();
+                for (KnownCard card : hand.getKnownCards()) {
+                    if (table.getFireworks().canAccept(card)) {
+                        if (!seenColors.contains(card.getColor())) {
+                            return Turn.hint(player, card.getColor());
+                        }
+                        if (!seenNumbers.contains(card.getNumber())) {
+                            return Turn.hint(player, card.getNumber());
+                        }
+                    }
+                    seenColors.add(card.getColor());
+                    seenNumbers.add(card.getNumber());
+                }
+            }
+        }
+        return Turn.discard(myHand.getCards().get(myHand.getCards().size()-1));
     }
-    return Turn.discard(myHand.getFirstCard());
-  }
 
-  @Override
-  public void hintGiven(ColorHintAnyone colorHint) {
-    if (colorHint.getToPlayer().equals(this)) {
-      myHand.getCards().stream().filter(card -> colorHint.getIndicatedCards().contains(card))
-          .limit(1).forEach(cardsToPlay::add);
-    }
-  }
-
-  @Override
-  public void hintGiven(NumberHint numberHint) {
-    if (numberHint.getToPlayer().equals(this)) {
-      myHand.getCards().stream().filter(card -> numberHint.getIndicatedCards().contains(card))
-          .limit(1).forEach(cardsToPlay::add);
+    @Override
+    public void receiveHint(ColorHintToMe colorHint) {
+        myHand.getCards().stream().filter(card -> colorHint.getMyIndicatedCards().contains(card))
+                .limit(1).forEach(cardsToPlay::add);
     }
 
-  }
+    @Override
+    public void receiveHint(NumberHintToMe numberHint) {
+        myHand.getCards().stream().filter(card -> numberHint.getMyIndicatedCards().contains(card))
+                .limit(1).forEach(cardsToPlay::add);
+    }
 
-  @Override
-  public void cardPlayed(Player player, Card card, CardPlayedOutcome outcome) {
+    @Override
+    public void cardPlayed(OtherPlayer player, KnownCard card, CardPlayedOutcome outcome) {
 
-  }
+    }
 
-  @Override
-  public void cardDiscarded(Player player, Card card) {
+    @Override
+    public void cardDiscarded(OtherPlayer player, KnownCard card) {
 
-  }
+    }
 
-  @Override
-  public void cardDrawn(Player player) {
+    @Override
+    public void theLastCardDrawn(OtherPlayer player) {
 
-  }
+    }
 
-  @Override
-  public void lastCardDrawn(Player player) {
-
-  }
+    @Override
+    public int acceptDrawnCard(UnknownCard card) {
+        return 0;//myHand.getCards().size()-1;
+    }
 }

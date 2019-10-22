@@ -1,200 +1,209 @@
 package com.pgrela.games.hanabi.domain;
 
+import com.pgrela.games.hanabi.domain.api.CardPlayedOutcome;
+import com.pgrela.games.hanabi.domain.api.Fireworks;
+import com.pgrela.games.hanabi.domain.api.KnownCard;
+import com.pgrela.games.hanabi.domain.api.OtherPlayer;
+import com.pgrela.games.hanabi.domain.api.Spectator;
+import com.pgrela.games.hanabi.domain.api.Table;
+import com.pgrela.games.hanabi.domain.api.UnknownCard;
 import com.pgrela.games.hanabi.domain.hint.ColorHintAnyone;
+import com.pgrela.games.hanabi.domain.hint.NumberHintAnyone;
+
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class Game implements Table {
 
-  private Deck deck;
-  private Fireworks fireworks;
-  private int availableHintTokens;
-  private int usedHintTokens;
-  private int availableBlownTokens;
-  private boolean lastRound;
-  private GamePlayer lastPlayer;
-  private boolean gameFinished;
-  private List<? extends Spectator> playAwares;
-  private List<PlayerWithHand> players;
-  private Map<GamePlayer, Hand> hands;
-  private Map<SomeonesHand, GamePlayer> playersByHands;
+    private Deck deck;
+    private FireworksImpl fireworks;
+    private int availableHintTokens;
+    private int usedHintTokens;
+    private int availableBlownTokens;
+    private boolean lastRound;
+    private ThePlayer lastPlayer;
+    private boolean gameFinished;
 
-  private Queue<Consumer<Spectator>> events = new LinkedList<>();
+    private List<? extends Spectator> spectators;
+    private List<ThePlayer> players;
 
-  Game(Deck deck, Fireworks fireworks, int availableHintTokens, int usedHintTokens,
-      int availableBlownTokens, boolean lastRound, GamePlayer lastPlayer, boolean gameFinished,
-      List<? extends Spectator> playAwares,
-      List<PlayerWithHand> players) {
-    this.deck = deck;
-    this.fireworks = fireworks;
-    this.availableHintTokens = availableHintTokens;
-    this.usedHintTokens = usedHintTokens;
-    this.availableBlownTokens = availableBlownTokens;
-    this.lastRound = lastRound;
-    this.lastPlayer = lastPlayer;
-    this.gameFinished = gameFinished;
-    this.playAwares = playAwares;
-    this.players = players;
+    private Queue<Consumer<Spectator>> events = new LinkedList<>();
+    private Queue<Consumer<ThePlayer>> announcements = new LinkedList<>();
 
-    hands = players.stream()
-        .collect(Collectors.toMap(PlayerWithHand::getPlayer, PlayerWithHand::getHand));
-    playersByHands = players.stream()
-        .collect(Collectors.toMap(PlayerWithHand::getHand, PlayerWithHand::getPlayer));
-  }
-
-  public boolean isFinished() {
-    return gameFinished || fireworks.areFinished() || areBlownTokensExhausted();
-  }
-
-  public void start() {
-    int currentPlayer = 0;
-    while (!isFinished()) {
-      GamePlayer player = players.get(currentPlayer++ % players.size()).getPlayer();
-      Turn turn = player.doTheMove();
-      turn.execute(this, player);
-      turnPlayed(player);
-      while (!events.isEmpty()) {
-        playAwares.forEach(events.poll());
-      }
-      //new Printer().print(this);
+    Game(Deck deck, FireworksImpl fireworks, int availableHintTokens, int usedHintTokens,
+         int availableBlownTokens, boolean lastRound, ThePlayer lastPlayer, boolean gameFinished,
+         List<? extends Spectator> spectators,
+         List<ThePlayer> players) {
+        this.deck = deck;
+        this.fireworks = fireworks;
+        this.availableHintTokens = availableHintTokens;
+        this.usedHintTokens = usedHintTokens;
+        this.availableBlownTokens = availableBlownTokens;
+        this.lastRound = lastRound;
+        this.lastPlayer = lastPlayer;
+        this.gameFinished = gameFinished;
+        this.spectators = spectators;
+        this.players = players;
     }
-  }
 
-  void giveHint(Player player, SomeonesHand hand, Color color) {
-    Hand theHand = (Hand) hand;
-    List<UnknownCard> indicatedCards = theHand.getRealCards().stream()
-        .filter(h -> h.getColor().equals(color))
-        .collect(Collectors.toList());
-    giveHint(new ColorHintAnyone(player, playersByHands.get(hand), indicatedCards, color));
-  }
-
-  void giveHint(Player player, SomeonesHand hand, Number number) {
-    Hand theHand = (Hand) hand;
-    List<UnknownCard> indicatedCards = theHand.getRealCards().stream()
-        .filter(h -> h.getNumber().equals(number))
-        .collect(Collectors.toList());
-    giveHint(new NumberHint(player, playersByHands.get(hand), indicatedCards, number));
-  }
-
-  void giveHint(ColorHintAnyone colorHint) {
-    decreaseHintTokens();
-    events.add((spectator -> spectator.hintGiven(colorHint)));
-  }
-
-  void giveHint(NumberHint numberHint) {
-    decreaseHintTokens();
-    events.add((spectator -> spectator.hintGiven(numberHint)));
-  }
-
-  CardPlayedOutcome playCard(Player player, UnknownCard unknownCard) {
-    Card card = (Card) unknownCard;
-    hands.get(player).remove(card);
-    if (fireworks.canAccept(card)) {
-      fireworks.add(card);
-      events.add((spectator -> spectator.cardPlayed(player, card, CardPlayedOutcome.SUCCESS)));
-      return CardPlayedOutcome.SUCCESS;
-    } else {
-      blow();
-      events.add((spectator -> spectator.cardPlayed(player, card, CardPlayedOutcome.FAIL)));
-      return CardPlayedOutcome.FAIL;
+    private boolean isFinished() {
+        return gameFinished || fireworks.areFinished() || areBlownTokensExhausted();
     }
-  }
 
-  void discardCard(Player player, UnknownCard unknownCard) {
-    Card card = (Card) unknownCard;
-    if(!hands.get(player).getCards().contains(unknownCard)){
-      throw new IllegalGameMoveException("");
+    public void start() {
+        int currentPlayer = 0;
+        while (!isFinished()) {
+            ThePlayer player = players.get(currentPlayer++ % players.size());
+            Turn turn = player.getPlayer().doTheMove();
+            turn.execute(this, player);
+            turnPlayed(player);
+            while (!events.isEmpty()) {
+                spectators.forEach(events.poll());
+            }
+            while (!announcements.isEmpty()) {
+                players.forEach(announcements.poll());
+            }
+        }
     }
-    hands.get(player).remove(card);
-    increaseHintTokens();
-    events.add((spectator -> spectator.cardDiscarded(player, card)));
-  }
 
-  Card drawCard(Player player) {
-    Card card = deck.draw();
-    hands.get(player).add(card);
-    events.add((spectator -> spectator.cardDiscarded(player, card)));
-    return card;
-  }
-
-  void turnPlayed(GamePlayer player) {
-    if (lastRound) {
-      if (player.equals(lastPlayer)) {
-        gameFinished = true;
-      }
-      return;
+    void giveHint(ThePlayer player, OtherPlayer otherPlayer, Color color) {
+        ThePlayer theOtherPlayer = (ThePlayer) otherPlayer;
+        List<KnownCard> indicatedCards = theOtherPlayer.getHand().getRealCards().stream()
+                .filter(h -> h.getColor().equals(color))
+                .collect(Collectors.toList());
+        giveHint(new ColorHintAnyone(player, otherPlayer, indicatedCards, color));
     }
-    if (isDeckEmpty()) {
-      lastRound = true;
-      lastPlayer = player;
-      events.add((spectator -> spectator.lastCardDrawn(player)));
+
+    void giveHint(ThePlayer player, OtherPlayer otherPlayer, Number number) {
+        List<KnownCard> indicatedCards = player.getHand().getRealCards().stream()
+                .filter(h -> h.getNumber().equals(number))
+                .collect(Collectors.toList());
+        giveHint(new NumberHintAnyone(player, otherPlayer, indicatedCards, number));
     }
-  }
 
-  public boolean areBlownTokensExhausted() {
-    return availableBlownTokens == 0;
-  }
-
-
-  private void decreaseHintTokens() {
-    if (availableHintTokens == 0) {
-      throw new IllegalGameMoveException("No more hint tokens");
+    private void giveHint(ColorHintAnyone colorHint) {
+        decreaseHintTokens();
+        events.add((spectator -> spectator.hintGiven(colorHint)));
+        announcements.add((player -> player.dispatchHint(colorHint)));
     }
-    --availableHintTokens;
-    ++usedHintTokens;
-  }
 
-  private void blow() {
-    if (availableBlownTokens == 0) {
-      throw new IllegalGameMoveException("No more blown tokens!");
+    private void giveHint(NumberHintAnyone numberHint) {
+        decreaseHintTokens();
+        events.add((spectator -> spectator.hintGiven(numberHint)));
+        announcements.add((player -> player.dispatchHint(numberHint)));
     }
-    --availableBlownTokens;
-    if (availableBlownTokens == 0) {
-      events.add(Spectator::gameFinished);
+
+    CardPlayedOutcome playCard(ThePlayer player, UnknownCard unknownCard) {
+        KnownCard card = player.getHand().remove(unknownCard);
+        if (fireworks.canAccept(card)) {
+            fireworks.add(card);
+            events.add((spectator -> spectator.cardPlayed(player, card, CardPlayedOutcome.SUCCESS)));
+            announcements.add((aplayer -> aplayer.getPlayer().cardPlayed(player, card, CardPlayedOutcome.SUCCESS)));
+            return CardPlayedOutcome.SUCCESS;
+        } else {
+            blow();
+            events.add((spectator -> spectator.cardPlayed(player, card, CardPlayedOutcome.FAIL)));
+            announcements.add((aplayer -> aplayer.getPlayer().cardPlayed(player, card, CardPlayedOutcome.FAIL)));
+            return CardPlayedOutcome.FAIL;
+        }
     }
-  }
 
-
-  private void increaseHintTokens() {
-    if (usedHintTokens > 0) {
-      ++availableHintTokens;
-      --usedHintTokens;
+    void discardCard(ThePlayer player, UnknownCard unknownCard) {
+        Card card = (Card) unknownCard;
+        if (!player.getHand().contains(unknownCard)) {
+            throw new IllegalGameMoveException("");
+        }
+        player.getHand().remove(card);
+        increaseHintTokens();
+        events.add((spectator -> spectator.cardDiscarded(player, card)));
     }
-  }
 
-  public boolean isDeckEmpty() {
-    return deck.isEmpty();
-  }
+    Card drawCard(ThePlayer player) {
+        Card card = deck.draw();
+        player.getHand().add(player.getPlayer().acceptDrawnCard(card), card);
+        events.add((spectator -> spectator.cardDiscarded(player, card)));
+        return card;
+    }
 
-  public Fireworks getFireworks() {
-    return fireworks;
-  }
+    private void turnPlayed(ThePlayer player) {
+        if (lastRound) {
+            if (player.equals(lastPlayer)) {
+                gameFinished = true;
+                events.add(Spectator::gameFinished);
+                announcements.add(aPlayer -> aPlayer.getPlayer().gameFinished());
+            }
+            return;
+        }
+        if (isDeckEmpty()) {
+            lastRound = true;
+            lastPlayer = player;
+            events.add((spectator -> spectator.theLastCardDrawn(player)));
+        }
+    }
 
-  List<PlayerWithHand> getPlayers() {
-    return players;
-  }
+    private boolean areBlownTokensExhausted() {
+        return availableBlownTokens == 0;
+    }
 
-  public int getAvailableHintTokens() {
-    return availableHintTokens;
-  }
 
-  public int getAvailableBlownTokens() {
-    return availableBlownTokens;
-  }
+    private void decreaseHintTokens() {
+        if (availableHintTokens == 0) {
+            throw new IllegalGameMoveException("No more hint tokens");
+        }
+        --availableHintTokens;
+        ++usedHintTokens;
+    }
 
-  public int remainingDeckSize() {
-    return deck.size();
-  }
+    private void blow() {
+        if (availableBlownTokens == 0) {
+            throw new IllegalGameMoveException("No more blown tokens!");
+        }
+        --availableBlownTokens;
+        if (availableBlownTokens == 0) {
+            events.add(Spectator::gameFinished);
+        }
+    }
 
-  public boolean areHintTokensAvailable() {
-    return availableHintTokens > 0;
-  }
 
-  public int score() {
-    return fireworks.score();
-  }
+    private void increaseHintTokens() {
+        if (usedHintTokens > 0) {
+            ++availableHintTokens;
+            --usedHintTokens;
+        }
+    }
+
+    public boolean isDeckEmpty() {
+        return deck.isEmpty();
+    }
+
+    public Fireworks getFireworks() {
+        return fireworks;
+    }
+
+    List<ThePlayer> getPlayers() {
+        return players;
+    }
+
+    public int getAvailableHintTokens() {
+        return availableHintTokens;
+    }
+
+    public int getAvailableBlownTokens() {
+        return availableBlownTokens;
+    }
+
+    public int remainingDeckSize() {
+        return deck.size();
+    }
+
+    public boolean areHintTokensAvailable() {
+        return availableHintTokens > 0;
+    }
+
+    public int score() {
+        return fireworks.score();
+    }
 }

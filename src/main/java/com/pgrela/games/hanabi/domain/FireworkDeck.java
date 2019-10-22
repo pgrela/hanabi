@@ -1,5 +1,7 @@
 package com.pgrela.games.hanabi.domain;
 
+import com.pgrela.games.hanabi.domain.api.KnownCard;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -8,7 +10,7 @@ public class FireworkDeck {
 
   private final Color color;
   private final List<Number> expectedNumbers;
-  private final List<Card> cards = new ArrayList<>();
+  private final List<KnownCard> cards = new ArrayList<>();
 
   public static FireworkDeck empty(Color color) {
     return new FireworkDeck(color, Number.ONE_TO_FIVE);
@@ -30,14 +32,14 @@ public class FireworkDeck {
         && card.getNumber().equals(expectedNumbers.get(cards.size()));
   }
 
-  public void add(Card card) {
+  public void add(KnownCard card) {
     if (!canAccept(card)) {
       throw new IllegalGameMoveException("Can not add this card");
     }
     cards.add(card);
   }
 
-  public Optional<Card> topCard() {
+  public Optional<KnownCard> topCard() {
     return cards.isEmpty() ? Optional.empty() : Optional.of(cards.get(cards.size() - 1));
   }
 
