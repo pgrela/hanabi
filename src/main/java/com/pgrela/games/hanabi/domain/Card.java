@@ -1,5 +1,6 @@
 package com.pgrela.games.hanabi.domain;
 
+import com.pgrela.games.hanabi.domain.api.CardValue;
 import com.pgrela.games.hanabi.domain.api.KnownCard;
 import com.pgrela.games.hanabi.domain.api.UnknownCard;
 
@@ -29,8 +30,20 @@ public class Card implements KnownCard, UnknownCard {
     return this;
   }
 
+  @Override
+  public CardValue value() {
+    return new CardValue(color, number);
+  }
+
   public Color getColor() {
     return color;
   }
 
+  @Override
+  public String toString() {
+    return "Card{" +
+        "" + number +
+        ", " + color +
+        '}';
+  }
 }

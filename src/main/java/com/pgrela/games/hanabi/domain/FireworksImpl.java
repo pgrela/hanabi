@@ -16,17 +16,13 @@ public class FireworksImpl implements Fireworks {
     }
 
     public static FireworksImpl empty() {
-        return new FireworksImpl(Color.BASIC_COLORS.stream().collect(Collectors.toMap(Function.identity(), c -> new FireworkDeck(c, Number.ONE_TO_FIVE))));
+        return new FireworksImpl(Color.BASIC_COLORS.stream().collect(Collectors.toMap(Function.identity(),
+            FireworkDeck::empty)));
     }
 
     @Override
     public boolean areFinished() {
         return decks.values().stream().allMatch(FireworkDeck::isFinished);
-    }
-
-    @Override
-    public boolean canAccept(Card card) {
-        return decks.get(card.getColor()).canAccept(card);
     }
 
     @Override

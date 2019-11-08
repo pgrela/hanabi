@@ -78,7 +78,8 @@ public class Game implements Table {
     }
 
     void giveHint(ThePlayer player, OtherPlayer otherPlayer, Number number) {
-        List<KnownCard> indicatedCards = player.getHand().getRealCards().stream()
+        ThePlayer theOtherPlayer = (ThePlayer) otherPlayer;
+        List<KnownCard> indicatedCards = theOtherPlayer.getHand().getRealCards().stream()
                 .filter(h -> h.getNumber().equals(number))
                 .collect(Collectors.toList());
         giveHint(new NumberHintAnyone(player, otherPlayer, indicatedCards, number));
@@ -119,16 +120,19 @@ public class Game implements Table {
         player.getHand().remove(card);
         increaseHintTokens();
         events.add((spectator -> spectator.cardDiscarded(player, card)));
+        announcements.add((aPlayer -> aPlayer.getPlayer().cardDiscarded(player, card)));
     }
 
     Card drawCard(ThePlayer player) {
         Card card = deck.draw();
         player.getHand().add(player.getPlayer().acceptDrawnCard(card), card);
-        events.add((spectator -> spectator.cardDiscarded(player, card)));
+        events.add((spectator -> spectator.cardDrawn(player, card)));
+        announcements.add((aPlayer -> aPlayer.getPlayer().cardDrawn(player, card)));
         return card;
     }
 
     private void turnPlayed(ThePlayer player) {
+        events.add(Spectator::turnPlayed);
         if (lastRound) {
             if (player.equals(lastPlayer)) {
                 gameFinished = true;
@@ -141,6 +145,7 @@ public class Game implements Table {
             lastRound = true;
             lastPlayer = player;
             events.add((spectator -> spectator.theLastCardDrawn(player)));
+            announcements.add((aPlayer -> aPlayer.getPlayer().theLastCardDrawn(player)));
         }
     }
 
@@ -205,5 +210,9 @@ public class Game implements Table {
 
     public int score() {
         return fireworks.score();
+    }
+
+    public List<? extends Spectator> getSpectators() {
+        return spectators;
     }
 }

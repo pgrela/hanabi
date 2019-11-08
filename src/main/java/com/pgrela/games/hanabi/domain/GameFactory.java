@@ -14,20 +14,20 @@ import java.util.stream.IntStream;
 
 public class GameFactory {
 
-    public static Game setupNewGame(Supplier<Player> playerProvider) {
+    public static Game setupNewGame(Supplier<Player> playerProvider, int playersNo) {
         Deck deck = Deck.shuffle(Card.BASIC_DECK);
+        int cardsPerPlayer = playersNo>3?4:5;
 
         LinkedList<ThePlayer> players = new LinkedList<>();
-        for (int i = 0; i < 5; i++) {
-            List<Card> cards = IntStream.range(0, 4).mapToObj((ignore) -> deck.draw())
+        for (int i = 0; i < playersNo; i++) {
+            List<Card> cards = IntStream.range(0, cardsPerPlayer).mapToObj((ignore) -> deck.draw())
                     .collect(Collectors.toList());
             Hand hand = new Hand(cards);
             Player player = playerProvider.get();
             players.add(new ThePlayer(player, hand, "Player " + (i + 1)));
         }
         Printer printer = new Printer();
-        List<Spectator> barePlayers = Collections.emptyList();
-        //List<Spectator> barePlayers = Collections.singletonList(printer);
+        List<Spectator> barePlayers = Collections.singletonList(printer);
         Game game = new Game(deck, FireworksImpl.empty(), 8, 0, 3, false, null, false, barePlayers,
                 players);
         players.forEach(player -> player.getPlayer().setup(nextPlayers(player, players), player.getHand(), game));
@@ -43,6 +43,7 @@ public class GameFactory {
         for (int j = i; j < players.size(); j++) {
             otherPlayers.add(players.get(j));
         }
+        --i;
         for (int j = 0; j < i; j++) {
             otherPlayers.add(players.get(j));
         }

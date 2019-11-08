@@ -7,4 +7,5 @@ public interface KnownCard {
   Color getColor();
   Number getNumber();
   UnknownCard unknown();
+  CardValue value();
 }

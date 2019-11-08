@@ -45,4 +45,10 @@ public class ThePlayer implements OtherPlayer {
         }
     }
 
+    @Override
+    public String toString() {
+        return "{" +
+            "" + name +
+            '}';
+    }
 }

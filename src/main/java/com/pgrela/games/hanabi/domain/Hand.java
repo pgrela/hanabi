@@ -26,7 +26,7 @@ public class Hand implements MyHand, SomeonesHand {
   }
 
   void add(int index, Card card) {
-    cards.add(index,card);
+    cards.add(index, card);
   }
 
   public List<UnknownCard> getCards() {
@@ -40,6 +40,16 @@ public class Hand implements MyHand, SomeonesHand {
   @Override
   public List<KnownCard> getKnownCards() {
     return Collections.unmodifiableList(cards);
+  }
+
+  @Override
+  public KnownCard mostRightHandCard() {
+    return cards.get(cards.size() - 1);
+  }
+
+  @Override
+  public KnownCard mostLeftHandCard() {
+    return cards.get(0);
   }
 
   public boolean contains(UnknownCard card) {

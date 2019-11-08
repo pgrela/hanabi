@@ -17,9 +17,14 @@ public interface Spectator {
   default void cardDrawn(OtherPlayer player, KnownCard card) {
 
   }
+
   default void theLastCardDrawn(OtherPlayer player) {
 
   }
 
-  default void gameFinished(){}
+  default void gameFinished() {
+  }
+
+  default void turnPlayed() {
+  }
 }

@@ -4,10 +4,13 @@ import com.pgrela.games.hanabi.domain.Color;
 import com.pgrela.games.hanabi.domain.Number;
 import com.pgrela.games.hanabi.domain.Turn;
 import com.pgrela.games.hanabi.domain.api.CardPlayedOutcome;
+import com.pgrela.games.hanabi.domain.api.CardValue;
 import com.pgrela.games.hanabi.domain.api.ColorHintToMe;
+import com.pgrela.games.hanabi.domain.api.ColorHintToOtherPlayer;
 import com.pgrela.games.hanabi.domain.api.KnownCard;
 import com.pgrela.games.hanabi.domain.api.MyHand;
 import com.pgrela.games.hanabi.domain.api.NumberHintToMe;
+import com.pgrela.games.hanabi.domain.api.NumberHintToOtherPlayer;
 import com.pgrela.games.hanabi.domain.api.OtherPlayer;
 import com.pgrela.games.hanabi.domain.api.Player;
 import com.pgrela.games.hanabi.domain.api.SomeonesHand;
@@ -20,7 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-public class MiserablePlayer implements Player {
+public class SingleHinter implements Player {
 
     private List<OtherPlayer> nextPlayers;
     private MyHand myHand;
@@ -28,7 +31,10 @@ public class MiserablePlayer implements Player {
 
     private LinkedList<UnknownCard> cardsToPlay = new LinkedList<>();
 
-    public MiserablePlayer() {
+    private Set<KnownCard> discardedCards = new HashSet<>();
+    private Set<CardValue> hintedCards = new HashSet<>();
+
+    public SingleHinter() {
     }
 
 
@@ -54,7 +60,7 @@ public class MiserablePlayer implements Player {
                 Set<Color> seenColors = new HashSet<>();
                 Set<Number> seenNumbers = new HashSet<>();
                 for (KnownCard card : hand.getKnownCards()) {
-                    if (table.getFireworks().canAccept(card)) {
+                    if (!hintedCards.contains(card.value()) && table.getFireworks().canAccept(card)) {
                         if (!seenColors.contains(card.getColor())) {
                             return Turn.hint(player, card.getColor());
                         }
@@ -72,14 +78,28 @@ public class MiserablePlayer implements Player {
 
     @Override
     public void receiveHint(ColorHintToMe colorHint) {
-        myHand.getCards().stream().filter(card -> colorHint.getMyIndicatedCards().contains(card))
-                .limit(1).forEach(cardsToPlay::add);
+        cardsToPlay.add(colorHint.getMyIndicatedCards().get(0));
     }
 
     @Override
     public void receiveHint(NumberHintToMe numberHint) {
-        myHand.getCards().stream().filter(card -> numberHint.getMyIndicatedCards().contains(card))
-                .limit(1).forEach(cardsToPlay::add);
+        cardsToPlay.add(numberHint.getMyIndicatedCards().get(0));
+    }
+
+    @Override
+    public void hintGiven(ColorHintToOtherPlayer colorHint) {
+        KnownCard hintedCard = colorHint.getIndicatedCards().get(0);
+        if(table.getFireworks().canAccept(hintedCard)) {
+            hintedCards.add(hintedCard.value());
+        }
+    }
+
+    @Override
+    public void hintGiven(NumberHintToOtherPlayer numberHint) {
+        KnownCard hintedCard = numberHint.getIndicatedCards().get(0);
+        if(table.getFireworks().canAccept(hintedCard)) {
+            hintedCards.add(hintedCard.value());
+        }
     }
 
     @Override
@@ -89,7 +109,7 @@ public class MiserablePlayer implements Player {
 
     @Override
     public void cardDiscarded(OtherPlayer player, KnownCard card) {
-
+        discardedCards.add(card);
     }
 
     @Override
@@ -99,6 +119,6 @@ public class MiserablePlayer implements Player {
 
     @Override
     public int acceptDrawnCard(UnknownCard card) {
-        return 0;//myHand.getCards().size()-1;
+        return 0;
     }
 }

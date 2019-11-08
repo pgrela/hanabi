@@ -25,4 +25,8 @@ public class Number {
     NUMBERS.put(number, this);
   }
 
+  @Override
+  public String toString() {
+    return "{" + number + '}';
+  }
 }

@@ -18,4 +18,11 @@ public class Color {
   public Color(String name) {
     this.name = name;
   }
+
+  @Override
+  public String toString() {
+    return "{" +
+        "" + name +
+        '}';
+  }
 }

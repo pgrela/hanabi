@@ -1,19 +1,36 @@
 package com.pgrela.algorithms.genetic.engine;
 
-public class Pangea {
-    public static void main(String[] args) {
-        Zoologist zoologist = new Zoologist();
+import com.pgrela.algorithms.genetic.api.Genosaur;
+import java.util.Collection;
 
-        JuvenileHerd herd = new JuvenileHerd();
-        Jungle jungle = new Jungle();
-        MatureHerd matureHerd = herd.seekAdventures(jungle);
+public class Pangea<GENOSAUR extends Genosaur<GENOSAUR>> {
 
-        for (int year = 0; year < 100; year++) {
-            herd = matureHerd.matingSeason(new Ritual());
-            matureHerd = herd.seekAdventures(jungle);
-        }
+  private Jungle jungle;
+  private JuvenileHerd<GENOSAUR> herd;
+  private Ritual<GENOSAUR> ritual;
+  private Collection<Zoologist> zoologists;
 
-        HerdStatistics statistics = zoologist.observe(matureHerd);
-        System.out.println(statistics);
+  public Pangea(
+      Jungle jungle,
+      JuvenileHerd<GENOSAUR> herd, Ritual<GENOSAUR> ritual,
+      Collection<Zoologist> zoologists) {
+    this.jungle = jungle;
+    this.herd = herd;
+    this.ritual = ritual;
+    this.zoologists = zoologists;
+  }
+
+  public void start() {
+    Zoologist zoologist = new Zoologist();
+    MatureHerd<GENOSAUR> matureHerd = herd.seekAdventures(jungle);
+
+    for (int year = 0; year < 300; year++) {
+      herd = ritual.undergo(matureHerd);
+      matureHerd = herd.seekAdventures(jungle);
+
+      HerdStatistics statistics = zoologist.observe(matureHerd);
+      System.out.println(statistics);
     }
+    System.out.println("done");
+  }
 }
