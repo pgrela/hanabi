@@ -1,7 +1,7 @@
 package com.pgrela.algorithms.genetic.engine;
 
-import com.pgrela.algorithms.genetic.api.Genosaur;
+import com.pgrela.algorithms.genetic.api.Genome;
 
-public interface Ritual<GENOSAUR extends Genosaur<GENOSAUR>> {
-  JuvenileHerd<GENOSAUR> undergo(MatureHerd<GENOSAUR> genosaurs);
+public interface Ritual<GENOME extends Genome<GENOME>> {
+  JuvenileHerd<GENOME> undergo(MatureHerd<GENOME> genosaurs);
 }

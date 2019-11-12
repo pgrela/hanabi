@@ -1,8 +1,8 @@
 package com.pgrela.algorithms.genetic.engine;
 
-import com.pgrela.algorithms.genetic.api.Genosaur;
+import com.pgrela.algorithms.genetic.api.Genome;
 
 
-public interface Jungle<GENOSAUR extends Genosaur<GENOSAUR>> {
-    SurvivalSkills judge(GENOSAUR genosaur);
+public interface Jungle<GENOME extends Genome<GENOME>> {
+    SurvivalSkills evaluate(GENOME genosaur);
 }

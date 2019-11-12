@@ -6,4 +6,5 @@ public interface SomeonesHand {
   List<KnownCard> getKnownCards();
   KnownCard mostRightHandCard();
   KnownCard mostLeftHandCard();
+  int size();
 }

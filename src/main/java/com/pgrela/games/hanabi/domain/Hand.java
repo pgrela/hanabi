@@ -52,6 +52,11 @@ public class Hand implements MyHand, SomeonesHand {
     return cards.get(0);
   }
 
+  @Override
+  public int size() {
+    return cards.size();
+  }
+
   public boolean contains(UnknownCard card) {
     return cards.contains(card);
   }

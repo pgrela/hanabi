@@ -42,7 +42,7 @@ public class Printer implements Spectator {
 
     public void snapshot() {
         for (ThePlayer player : game.getPlayers()) {
-            transcript.append(player+": ");
+            transcript.append(player).append(": ");
             player.getHand().getRealCards().forEach(card -> transcript.append(toString(card) + " "));
             transcript.append('\n');
         }
@@ -133,6 +133,22 @@ public class Printer implements Spectator {
 
     public void setGame(Game game) {
         this.game = game;
+    }
+
+    @Override
+    public void gameStarts() {
+        Deck deck = game.copyDeck();
+        transcript.append("DECK: ");
+        while(!deck.isEmpty()) {
+            transcript.append(toString(deck.draw()));
+        }
+        transcript.append("\n");
+        snapshot();
+    }
+
+    @Override
+    public void gameInitiated(Deck deck) {
+        transcript.append("Deck: ").append(deck.serialize()).append("\n");
     }
 
     public void print(){

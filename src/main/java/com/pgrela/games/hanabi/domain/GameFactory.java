@@ -11,27 +11,35 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class GameFactory {
 
     public static Game setupNewGame(Supplier<Player> playerProvider, int playersNo) {
-        Deck deck = Deck.shuffle(Card.BASIC_DECK);
-        int cardsPerPlayer = playersNo>3?4:5;
+        return setupNewGame(playerProvider, playersNo, Deck.shuffle(Card.BASIC_DECK));
+    }
+    public static Game setupNewGame(Supplier<Player> playerProvider, int playersNo, Deck deck) {
+        return setupNewGame(Stream.generate(playerProvider).limit(playersNo).collect(Collectors.toList()), deck);
+    }
+    public static Game setupNewGame(List<? extends Player> players, Deck deck) {
+        Deck copiedDeck = deck.clone();
+        int cardsPerPlayer = players.size()>3?4:5;
 
-        LinkedList<ThePlayer> players = new LinkedList<>();
-        for (int i = 0; i < playersNo; i++) {
+        LinkedList<ThePlayer> thePlayers = new LinkedList<>();
+        for (int i = 0; i < players.size(); i++) {
+            Player player = players.get(i);
             List<Card> cards = IntStream.range(0, cardsPerPlayer).mapToObj((ignore) -> deck.draw())
                     .collect(Collectors.toList());
             Hand hand = new Hand(cards);
-            Player player = playerProvider.get();
-            players.add(new ThePlayer(player, hand, "Player " + (i + 1)));
+            thePlayers.add(new ThePlayer(player, hand, "Player " + i));
         }
         Printer printer = new Printer();
-        List<Spectator> barePlayers = Collections.singletonList(printer);
-        Game game = new Game(deck, FireworksImpl.empty(), 8, 0, 3, false, null, false, barePlayers,
-                players);
-        players.forEach(player -> player.getPlayer().setup(nextPlayers(player, players), player.getHand(), game));
+        List<Spectator> spectators = Collections.singletonList(printer);
+        Game game = new Game(deck, FireworksImpl.empty(), 8, 0, 3, false, null, false, spectators,
+                thePlayers);
+        thePlayers.forEach(player -> player.getPlayer().setup(nextPlayers(player, thePlayers), player.getHand(), game));
         printer.setGame(game);
+        printer.gameInitiated(copiedDeck);
         return game;
     }
 

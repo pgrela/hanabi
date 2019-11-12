@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Number {
+public class Number implements Comparable<Number> {
 
   private static final Map<Integer, Number> NUMBERS = new HashMap<>();
   public static final Number ONE = new Number(1);
@@ -25,8 +25,19 @@ public class Number {
     NUMBERS.put(number, this);
   }
 
+  public String serialize(){
+    return String.valueOf(number);
+  }
+  public static Number deserialize(String number){
+    return NUMBERS.get(Integer.valueOf(number));
+  }
   @Override
   public String toString() {
     return "{" + number + '}';
+  }
+
+  @Override
+  public int compareTo(Number o) {
+    return Integer.compare(number, o.number);
   }
 }

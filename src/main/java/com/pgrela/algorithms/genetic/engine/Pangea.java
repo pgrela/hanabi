@@ -1,18 +1,18 @@
 package com.pgrela.algorithms.genetic.engine;
 
-import com.pgrela.algorithms.genetic.api.Genosaur;
+import com.pgrela.algorithms.genetic.api.Genome;
 import java.util.Collection;
 
-public class Pangea<GENOSAUR extends Genosaur<GENOSAUR>> {
+public class Pangea<GENOME extends Genome<GENOME>> {
 
   private Jungle jungle;
-  private JuvenileHerd<GENOSAUR> herd;
-  private Ritual<GENOSAUR> ritual;
+  private JuvenileHerd<GENOME> herd;
+  private Ritual<GENOME> ritual;
   private Collection<Zoologist> zoologists;
 
   public Pangea(
-      Jungle jungle,
-      JuvenileHerd<GENOSAUR> herd, Ritual<GENOSAUR> ritual,
+      Jungle<GENOME> jungle,
+      JuvenileHerd<GENOME> herd, Ritual<GENOME> ritual,
       Collection<Zoologist> zoologists) {
     this.jungle = jungle;
     this.herd = herd;
@@ -22,15 +22,13 @@ public class Pangea<GENOSAUR extends Genosaur<GENOSAUR>> {
 
   public void start() {
     Zoologist zoologist = new Zoologist();
-    MatureHerd<GENOSAUR> matureHerd = herd.seekAdventures(jungle);
+    MatureHerd<GENOME> matureHerd = herd.seekAdventures(jungle);
 
     for (int year = 0; year < 300; year++) {
       herd = ritual.undergo(matureHerd);
       matureHerd = herd.seekAdventures(jungle);
 
-      HerdStatistics statistics = zoologist.observe(matureHerd);
-      System.out.println(statistics);
+      zoologist.observe(matureHerd);
     }
-    System.out.println("done");
   }
 }

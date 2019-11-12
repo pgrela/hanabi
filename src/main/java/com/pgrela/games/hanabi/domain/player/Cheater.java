@@ -2,6 +2,7 @@ package com.pgrela.games.hanabi.domain.player;
 
 import com.pgrela.games.hanabi.domain.Color;
 import com.pgrela.games.hanabi.domain.Number;
+import com.pgrela.games.hanabi.domain.ThePlayer;
 import com.pgrela.games.hanabi.domain.Turn;
 import com.pgrela.games.hanabi.domain.api.CardPlayedOutcome;
 import com.pgrela.games.hanabi.domain.api.CardValue;
@@ -16,166 +17,259 @@ import com.pgrela.games.hanabi.domain.api.Player;
 import com.pgrela.games.hanabi.domain.api.SomeonesHand;
 import com.pgrela.games.hanabi.domain.api.Table;
 import com.pgrela.games.hanabi.domain.api.UnknownCard;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
+import com.pgrela.games.hanabi.domain.genetic.CheaterGene;
+import com.pgrela.games.hanabi.domain.genetic.CheaterGene.Action;
+import com.pgrela.games.hanabi.domain.genetic.CheaterGenome;
+import com.pgrela.games.hanabi.domain.genetic.CheaterNucleotide;
+
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-public class Cheater implements Player {
+public class Cheater implements Player, GeneticCheater {
 
-  private List<OtherPlayer> nextPlayers;
-  private MyHand myHand;
-  private Table table;
+    private List<OtherPlayer> nextPlayers;
+    private MyHand myHand;
+    private Table table;
 
-  private LinkedList<UnknownCard> cardsToPlay = new LinkedList<>();
+    private LinkedList<UnknownCard> cardsToPlay = new LinkedList<>();
 
-  private Set<KnownCard> discardedCards = new HashSet<>();
-  private Set<CardValue> hintedCards = new HashSet<>();
-  private Map<OtherPlayer, LinkedList<KnownCard>> cardsToBePlayed;
-  private FireworkSimulator simulator = new FireworkSimulator();
+    private Set<CardValue> discardedCards = new HashSet<>();
+    private Set<CardValue> hintedCards = new HashSet<>();
+    private Map<OtherPlayer, LinkedList<KnownCard>> cardsToBePlayed;
+    private FireworkSimulator simulator = new FireworkSimulator();
+    private CheaterGenome genome;
+    private Collection<UnknownCard> hold = new HashSet<>();
+    private Collection<KnownCard> held = new HashSet<>();
+    private Collection<KnownCard> discarding = new HashSet<>();
+    private Deque<UnknownCard> cardsToDiscard = new ArrayDeque<>();
 
-  public Cheater() {
-  }
-
-
-  public void setup(List<OtherPlayer> nextPlayers, MyHand myHand, Table table) {
-    this.nextPlayers = nextPlayers;
-    this.myHand = myHand;
-    this.table = table;
-
-    cardsToBePlayed = nextPlayers.stream()
-        .collect(Collectors.toMap(p -> p, (p) -> new LinkedList<>()));
-  }
-
-  @Override
-  public Turn doTheMove() {
-    if (!cardsToPlay.isEmpty() && (!cardsToBePlayed.get(nextPlayers.get(0)).isEmpty()
-        || table.getFireworks().canAccept(nextPlayers.get(0).getHand().mostRightHandCard()))) {
-      Optional<Turn> first = cardsToPlay.stream()
-          .filter(card -> myHand.getCards().contains(card)).map(Turn::play).findFirst();
-      if (first.isPresent()) {
-        return first.get();
-      }
-
+    public Cheater(CheaterGenome genome) {
+        this.genome = genome;
     }
-    if (table.areHintTokensAvailable()) {
-      simulator.startSimulation();
-      Map<Turn, Integer> allTurns = new HashMap<>();
-      for (OtherPlayer player : nextPlayers) {
-        Map<Turn, Integer> turns = getPossibleHints(player);
-        if (cardsToBePlayed.get(player).size() == 0 && !turns.isEmpty()) {
-          simulator.rollbackAll();
-          return bestHint(turns);
+
+
+    public void setup(List<OtherPlayer> nextPlayers, MyHand myHand, Table table) {
+        this.nextPlayers = nextPlayers;
+        this.myHand = myHand;
+        this.table = table;
+
+        cardsToBePlayed = nextPlayers.stream()
+                .collect(Collectors.toMap(p -> p, (p) -> new LinkedList<>()));
+    }
+
+    @Override
+    public Turn doTheMove() {
+        CheaterGene[] genes = genome.genes();
+        if (!cardsToPlay.isEmpty()) {
+            UnknownCard card = cardsToPlay.pop();
+            cardsToDiscard.remove(card);
+            return Turn.play(card);
         }
-        allTurns.putAll(turns);
-        if (cardsToBePlayed.get(player).size() > 0) {
-          simulator.simulateAdd(cardsToBePlayed.get(player).peekFirst());
+        if (table.areHintTokensAvailable()) {
+            simulator.startSimulation();
+            for (OtherPlayer player : nextPlayers) {
+                if(cardsToBePlayed.get(player).isEmpty() && !canAnyDiscard(player.getHand().getKnownCards())) {
+                    for (int i = 0; i < genes.length; i++) {
+                        if (applies(player.getHand(), genes[i])) {
+                            simulator.rollbackAll();
+                            return turn(i, player);
+                        }
+                    }
+                }
+                if (cardsToBePlayed.get(player).size() > 0) {
+                    simulator.simulateAdd(cardsToBePlayed.get(player).peekFirst());
+                }
+            }
+            simulator.rollbackAll();
+            simulator.startSimulation();
+            for (OtherPlayer player : nextPlayers) {
+                for (int i = 0; i < genes.length; i++) {
+                    if (applies(player.getHand(), genes[i])) {
+                        simulator.rollbackAll();
+                        return turn(i, player);
+                    }
+                }
+                if (cardsToBePlayed.get(player).size() > 0) {
+                    simulator.simulateAdd(cardsToBePlayed.get(player).peekFirst());
+                }
+            }
+            simulator.rollbackAll();
         }
-      }
-      if (!allTurns.isEmpty()) {
-        simulator.rollbackAll();
-        return bestHint(allTurns);
-      }
-      simulator.rollback();
-    }
-    return Turn.discard(myHand.getCards().get(myHand.getCards().size() - 1));
-  }
-
-  private Turn bestHint(Map<Turn, Integer> allTurns) {
-    return Collections.max(allTurns.entrySet(), Comparator.comparingInt(Map.Entry::getValue))
-        .getKey();
-  }
-
-  private Map<Turn, Integer> getPossibleHints(OtherPlayer player) {
-    SomeonesHand hand = player.getHand();
-    Map<Turn, Integer> turns = new HashMap<>();
-    turns.putAll(simulateHints(hand, Number.ONE_TO_FIVE, KnownCard::getNumber,
-        number -> Turn.hint(player, number)));
-    turns.putAll(simulateHints(hand, Color.BASIC_COLORS, KnownCard::getColor,
-        color -> Turn.hint(player, color)));
-    return turns;
-  }
-
-  private <T> Map<Turn, Integer> simulateHints(SomeonesHand hand, Iterable<T> items,
-      Function<KnownCard, T> accessor, Function<T, Turn> turn) {
-    Map<Turn, Integer> turns = new HashMap<>();
-    outerLoop:
-    for (T number : items) {
-      List<KnownCard> cardsToBeHinted = new ArrayList<>();
-      simulator.startSimulation();
-      for (KnownCard card : hand.getKnownCards()) {
-        if (accessor.apply(card).equals(number)) {
-          if (simulator.canAccept(card) && !hintedCards.contains(card.value())) {
-            simulator.simulateAdd(card);
-            cardsToBeHinted.add(card);
-          } else {
-            simulator.rollback();
-            continue outerLoop;
-          }
+        if (!cardsToDiscard.isEmpty()) {
+            return Turn.discard(cardsToDiscard.pop());
         }
-      }
-      simulator.rollback();
-      if (!cardsToBeHinted.isEmpty()) {
-        turns.put(turn.apply(number), cardsToBeHinted.size());
-      }
+        return Turn.discard(IntStream.rangeClosed(1, myHand.size()).mapToObj(i -> myHand.getCards().get(myHand.size() - i))
+                .filter(card -> !hold.contains(card))
+                .filter(card -> !cardsToPlay.contains(card))
+                .findFirst()
+                .orElse(myHand.getCards().iterator().next())
+        );
     }
-    return turns;
-  }
 
-  @Override
-  public void receiveHint(ColorHintToMe colorHint) {
-    cardsToPlay.addAll(colorHint.getMyIndicatedCards());
-  }
-
-  @Override
-  public void receiveHint(NumberHintToMe numberHint) {
-    cardsToPlay.addAll(numberHint.getMyIndicatedCards());
-  }
-
-  @Override
-  public void hintGiven(ColorHintToOtherPlayer colorHint) {
-    colorHint.getIndicatedCards().stream().map(KnownCard::value).forEach(hintedCards::add);
-    cardsToBePlayed.get(colorHint.getToPlayer()).addAll(colorHint.getIndicatedCards());
-  }
-
-  @Override
-  public void hintGiven(NumberHintToOtherPlayer numberHint) {
-    numberHint.getIndicatedCards().stream().map(KnownCard::value).forEach(hintedCards::add);
-    cardsToBePlayed.get(numberHint.getToPlayer()).addAll(numberHint.getIndicatedCards());
-  }
-
-  @Override
-  public void cardPlayed(OtherPlayer player, KnownCard card, CardPlayedOutcome outcome) {
-    if (outcome.equals(CardPlayedOutcome.SUCCESS)) {
-      simulator.add(card);
+    private boolean canAnyDiscard(List<KnownCard> cards) {
+        return cards.stream().anyMatch(discarding::contains);
     }
-    if (cardsToBePlayed.containsKey(player)) {
-      if (!cardsToBePlayed.get(player).poll().equals(card)) {
-        throw new IllegalStateException();
-      }
+
+    private Turn turn(int gene, OtherPlayer player) {
+        if (gene < Color.BASIC_COLORS.size()) {
+            return Turn.hint(player, Color.BASIC_COLORS.get(gene));
+        }
+        return Turn.hint(player, Number.ONE_TO_FIVE.get(gene - Color.BASIC_COLORS.size()));
     }
-  }
 
-  @Override
-  public void cardDiscarded(OtherPlayer player, KnownCard card) {
-    discardedCards.add(card);
-  }
+    private int gene(Color color) {
+        return Color.BASIC_COLORS.indexOf(color);
+    }
 
-  @Override
-  public void theLastCardDrawn(OtherPlayer player) {
+    private int gene(Number number) {
+        return Number.ONE_TO_FIVE.indexOf(number) + Color.BASIC_COLORS.size();
+    }
 
-  }
+    private boolean applies(SomeonesHand hand, CheaterGene gene) {
+        int newInformation = 0;
+        simulator.startSimulation();
+        List<KnownCard> cards = hand.getKnownCards();
+        for (CheaterNucleotide playing : CheaterGene.PLAYS) {
+            for (int cardIndex = 0; cardIndex < hand.size(); cardIndex++) {
+                KnownCard card = cards.get(cardIndex);
+                if (playing.equals(gene.nucleotide(cardIndex))) {
+                    if (simulator.canAccept(card) && !hintedCards.contains(card.value())) {
+                        simulator.simulateAdd(card);
+                        ++newInformation;
+                    } else {
+                        simulator.rollback();
+                        return false;
+                    }
+                }
+            }
+        }
+        simulator.rollback();
+        for (int i = 0; i < hand.size(); i++) {
+            if (gene.nucleotide(i).equals(Action.HOLD)) {
+                if (!cards.get(i).getNumber().equals(Number.ONE)) {
+                    if (cards.get(i).getNumber().equals(Number.FIVE)) {
+                        ++newInformation;
+                        continue;
+                    }
+                    if (!discardedCards.contains(cards.get(i).value())) {
+                        return false;
+                    }
+                    if(!held.contains(cards.get(i)))
+                        ++newInformation;
+                }
+            }
+        }
+        for (int i = 0; i < hand.size(); i++) {
+            if (gene.nucleotide(i).equals(Action.DISCARD)) {
+                KnownCard card = cards.get(i);
+                if (!table.getFireworks().contains(card)) {
+                    return false;
+                }
+                if(!discarding.contains(cards.get(i)))
+                    ++newInformation;
+            }
+        }
+        return newInformation > 0;
+    }
 
-  @Override
-  public int acceptDrawnCard(UnknownCard card) {
-    return 0;
-  }
+    @Override
+    public void receiveHint(ColorHintToMe colorHint) {
+        acceptHint(((GeneticCheater)((ThePlayer)colorHint.getFromPlayer()).getPlayer()).genome().genes()[gene(colorHint.getColor())]);
+    }
+
+    @Override
+    public void receiveHint(NumberHintToMe numberHint) {
+        acceptHint(((GeneticCheater)((ThePlayer)numberHint.getFromPlayer()).getPlayer()).genome().genes()[gene(numberHint.getNumber())]);
+    }
+
+    private void acceptHint(CheaterGene gene) {
+        List<UnknownCard> cards = myHand.getCards();
+        for (CheaterNucleotide playing : CheaterGene.PLAYS) {
+            for (int cardIndex = 0; cardIndex < myHand.size(); cardIndex++) {
+                UnknownCard card = cards.get(cardIndex);
+                if (playing.equals(gene.nucleotide(cardIndex))) {
+                    cardsToPlay.add(card);
+                }
+            }
+        }
+        for (int i = 0; i < myHand.size(); i++) {
+            if (gene.nucleotide(i).equals(Action.HOLD)) {
+                hold.add(cards.get(i));
+            }
+            if (gene.nucleotide(i).equals(Action.DISCARD)) {
+                if (!cardsToDiscard.contains(cards.get(i))) cardsToDiscard.add(cards.get(i));
+            }
+        }
+    }
+
+    private void processHint(CheaterGene gene, OtherPlayer player) {
+        List<KnownCard> cards = player.getHand().getKnownCards();
+        for (CheaterNucleotide playing : CheaterGene.PLAYS) {
+            for (int cardIndex = 0; cardIndex < player.getHand().size(); cardIndex++) {
+                KnownCard card = cards.get(cardIndex);
+                if (playing.equals(gene.nucleotide(cardIndex))) {
+                    cardsToBePlayed.get(player).add(card);
+                    hintedCards.add(card.value());
+                }
+            }
+        }
+        for (int i = 0; i < cards.size(); i++) {
+            if (gene.nucleotide(i).equals(Action.HOLD)) {
+                held.add(cards.get(i));
+            }
+            if (gene.nucleotide(i).equals(Action.DISCARD)) {
+                discarding.add(cards.get(i));
+            }
+        }
+    }
+
+    @Override
+    public void hintGiven(ColorHintToOtherPlayer colorHint) {
+        processHint(((GeneticCheater)((ThePlayer)colorHint.getFromPlayer()).getPlayer()).genome().genes()[gene(colorHint.getColor())], colorHint.getToPlayer());
+    }
+
+    @Override
+    public void hintGiven(NumberHintToOtherPlayer numberHint) {
+        processHint(((GeneticCheater)((ThePlayer)numberHint.getFromPlayer()).getPlayer()).genome().genes()[gene(numberHint.getNumber())], numberHint.getToPlayer());
+    }
+
+    @Override
+    public void cardPlayed(OtherPlayer player, KnownCard card, CardPlayedOutcome outcome) {
+        if (outcome.equals(CardPlayedOutcome.SUCCESS)) {
+            simulator.add(card);
+        }
+        if (cardsToBePlayed.containsKey(player)) {
+            if (!cardsToBePlayed.get(player).poll().equals(card)) {
+                throw new IllegalStateException();
+            }
+        }
+    }
+
+    @Override
+    public void cardDiscarded(OtherPlayer player, KnownCard card) {
+        discardedCards.add(card.value());
+    }
+
+    @Override
+    public void theLastCardDrawn(OtherPlayer player) {
+
+    }
+
+    @Override
+    public int acceptDrawnCard(UnknownCard card) {
+        return 0;
+    }
+
+    @Override
+    public CheaterGenome genome() {
+        return genome;
+    }
 }

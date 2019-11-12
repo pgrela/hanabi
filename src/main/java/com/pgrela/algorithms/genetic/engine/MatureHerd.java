@@ -1,20 +1,18 @@
 package com.pgrela.algorithms.genetic.engine;
 
-import com.pgrela.algorithms.genetic.api.Genosaur;
+import com.pgrela.algorithms.genetic.api.Genome;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
-public class MatureHerd<GENOSAUR extends Genosaur<GENOSAUR>> {
+public class MatureHerd<GENOME extends Genome<GENOME>> {
 
-    private Collection<MatureGenosaur<GENOSAUR>> members;
+    private Collection<MatureGenosaur<GENOME>> members;
 
-    public MatureHerd(Collection<MatureGenosaur<GENOSAUR>> list) {
+    public MatureHerd(Collection<MatureGenosaur<GENOME>> list) {
         this.members = list;
     }
 
-    Collection<MatureGenosaur<GENOSAUR>> members() {
+    Collection<MatureGenosaur<GENOME>> members() {
         return members;
     }
 

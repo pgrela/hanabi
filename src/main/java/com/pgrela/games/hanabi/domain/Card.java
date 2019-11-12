@@ -16,7 +16,7 @@ public class Card implements KnownCard, UnknownCard {
       .flatMap(color -> Number.BASIC_SET.stream().map(number -> new Card(color, number)))
       .collect(Collectors.toList());
 
-  private Card(Color color, Number number) {
+  Card(Color color, Number number) {
     this.color = color;
     this.number = number;
   }

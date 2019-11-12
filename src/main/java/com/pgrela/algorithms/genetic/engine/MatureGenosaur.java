@@ -1,14 +1,14 @@
 package com.pgrela.algorithms.genetic.engine;
 
-import com.pgrela.algorithms.genetic.api.Genosaur;
+import com.pgrela.algorithms.genetic.api.Genome;
 
-public class MatureGenosaur<GENOSAUR extends Genosaur<GENOSAUR>> {
+public class MatureGenosaur<GENOME extends Genome<GENOME>> {
 
-    private GENOSAUR genosaur;
+    private GENOME genome;
     private SurvivalSkills survivalSkills;
 
-    public MatureGenosaur(GENOSAUR genosaur, SurvivalSkills survivalSkills) {
-        this.genosaur = genosaur;
+    public MatureGenosaur(GENOME genome, SurvivalSkills survivalSkills) {
+        this.genome = genome;
         this.survivalSkills = survivalSkills;
     }
 
@@ -16,11 +16,11 @@ public class MatureGenosaur<GENOSAUR extends Genosaur<GENOSAUR>> {
         return survivalSkills;
     }
 
-    public GENOSAUR rejuvenate() {
-        return genosaur;
+    public GENOME rejuvenate() {
+        return genome;
     }
 
-    public GENOSAUR procreateWith(MatureGenosaur<GENOSAUR> partner) {
-        return genosaur.procreateWith(partner.genosaur);
+    public GENOME procreateWith(MatureGenosaur<GENOME> partner) {
+        return genome.cross(partner.genome);
     }
 }

@@ -1,5 +1,7 @@
 package com.pgrela.games.hanabi.domain.api;
 
+import com.pgrela.games.hanabi.domain.Deck;
+
 public interface Spectator {
 
   default void hintGiven(ColorHintToOtherPlayer colorHint) {
@@ -26,5 +28,11 @@ public interface Spectator {
   }
 
   default void turnPlayed() {
+  }
+
+  default void gameStarts() {
+  }
+
+  default void gameInitiated(Deck deck) {
   }
 }

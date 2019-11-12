@@ -17,7 +17,7 @@ public class FireworksImpl implements Fireworks {
 
     public static FireworksImpl empty() {
         return new FireworksImpl(Color.BASIC_COLORS.stream().collect(Collectors.toMap(Function.identity(),
-            FireworkDeck::empty)));
+                FireworkDeck::empty)));
     }
 
     @Override
@@ -43,5 +43,10 @@ public class FireworksImpl implements Fireworks {
     @Override
     public int score() {
         return decks.values().stream().mapToInt(FireworkDeck::score).sum();
+    }
+
+    @Override
+    public boolean contains(KnownCard card) {
+        return decks.get(card.getColor()).topCard().filter(top -> top.getNumber().compareTo(card.getNumber()) >= 0).isPresent();
     }
 }

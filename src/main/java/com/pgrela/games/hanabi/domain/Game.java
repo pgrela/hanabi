@@ -54,6 +54,7 @@ public class Game implements Table {
     }
 
     public void start() {
+        spectators.forEach(Spectator::gameStarts);
         int currentPlayer = 0;
         while (!isFinished()) {
             ThePlayer player = players.get(currentPlayer++ % players.size());
@@ -101,6 +102,9 @@ public class Game implements Table {
         KnownCard card = player.getHand().remove(unknownCard);
         if (fireworks.canAccept(card)) {
             fireworks.add(card);
+            if(card.getNumber().equals(Number.FIVE)){
+                increaseHintTokens();
+            }
             events.add((spectator -> spectator.cardPlayed(player, card, CardPlayedOutcome.SUCCESS)));
             announcements.add((aplayer -> aplayer.getPlayer().cardPlayed(player, card, CardPlayedOutcome.SUCCESS)));
             return CardPlayedOutcome.SUCCESS;
@@ -214,5 +218,9 @@ public class Game implements Table {
 
     public List<? extends Spectator> getSpectators() {
         return spectators;
+    }
+
+    public Deck copyDeck(){
+        return deck.clone();
     }
 }
