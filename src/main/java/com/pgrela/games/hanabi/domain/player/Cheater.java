@@ -133,7 +133,7 @@ public class Cheater implements Player, GeneticCheater {
         return Number.ONE_TO_FIVE.indexOf(number) + Color.BASIC_COLORS.size();
     }
 
-    private boolean applies(SomeonesHand hand, CheaterGene gene) {
+    private int applies(SomeonesHand hand, CheaterGene gene) {
         int newInformation = 0;
         simulator.startSimulation();
         List<KnownCard> cards = hand.getKnownCards();
@@ -146,7 +146,7 @@ public class Cheater implements Player, GeneticCheater {
                         ++newInformation;
                     } else {
                         simulator.rollback();
-                        return false;
+                        return 0;
                     }
                 }
             }
@@ -160,7 +160,7 @@ public class Cheater implements Player, GeneticCheater {
                         continue;
                     }
                     if (!discardedCards.contains(cards.get(i).value())) {
-                        return false;
+                        return 0;
                     }
                     if(!held.contains(cards.get(i)))
                         ++newInformation;
@@ -171,13 +171,13 @@ public class Cheater implements Player, GeneticCheater {
             if (gene.nucleotide(i).equals(Action.DISCARD)) {
                 KnownCard card = cards.get(i);
                 if (!table.getFireworks().contains(card)) {
-                    return false;
+                    return 0;
                 }
                 if(!discarding.contains(cards.get(i)))
                     ++newInformation;
             }
         }
-        return newInformation > 0;
+        return newInformation;
     }
 
     @Override

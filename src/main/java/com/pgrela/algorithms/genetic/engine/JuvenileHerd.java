@@ -3,6 +3,9 @@ package com.pgrela.algorithms.genetic.engine;
 import com.pgrela.algorithms.genetic.api.Genome;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class JuvenileHerd<GENOME extends Genome<GENOME>> {
 
@@ -13,11 +16,9 @@ public class JuvenileHerd<GENOME extends Genome<GENOME>> {
   }
 
   public MatureHerd<GENOME> seekAdventures(Jungle<GENOME> jungle) {
-    Collection<MatureGenosaur<GENOME>> list = new ArrayList<>();
-    for (GENOME genome : members()) {
-      SurvivalSkills survivalSkills = jungle.evaluate(genome);
-      list.add(new MatureGenosaur<>(genome, survivalSkills));
-    }
+    List<MatureGenosaur<GENOME>> list = StreamSupport.stream(members().spliterator(), true)
+        .map(genome -> new MatureGenosaur<>(genome, jungle.evaluate(genome))).collect(
+            Collectors.toList());
     return new MatureHerd<>(list);
   }
 

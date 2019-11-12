@@ -11,6 +11,7 @@ public class PangeaBuilder<GENOME extends Genome<GENOME>> {
   private Collection<GENOME> herd;
   private Ritual<GENOME> ritual;
   private Zoologist[] zoologists;
+  private int years;
 
   public PangeaBuilder<GENOME> withHerd(Collection<GENOME> polynomials) {
     herd = polynomials;
@@ -33,6 +34,11 @@ public class PangeaBuilder<GENOME extends Genome<GENOME>> {
   }
 
   public Pangea create() {
-    return new Pangea<>(jungle, new JuvenileHerd<>(herd), ritual, Arrays.asList(zoologists));
+    return new Pangea<>(jungle, new JuvenileHerd<>(herd), ritual, Arrays.asList(zoologists), years);
+  }
+
+  public PangeaBuilder<GENOME> forGenerations(int generations) {
+    this.years = generations;
+    return this;
   }
 }

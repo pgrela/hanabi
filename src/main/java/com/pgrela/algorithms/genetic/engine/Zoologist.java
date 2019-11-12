@@ -49,7 +49,7 @@ public class Zoologist {
             game.start();
             scores.add(game.score());
         }
-        return String.format("%.2f (%.2f)", scores.stream().mapToInt(i->i).average().getAsDouble(), scores.stream().filter(i->i==25).count()*100./TEST_DECKS.length);
+        return String.format("%.2f (%.2f%%)", scores.stream().mapToInt(i->i).average().getAsDouble(), scores.stream().filter(i->i==25).count()*100./TEST_DECKS.length);
     }
 
     private List<Cheater> getPlayers(String leader, Class<? extends Genome> aClass) {

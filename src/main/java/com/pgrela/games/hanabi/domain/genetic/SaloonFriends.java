@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 public class SaloonFriends {
     private static final int PLAYERS = 4;
 
-    public static final int TESTING_DECKS = 33;
+    public static final int TESTING_DECKS = 100;
 
     public static void main(String[] args) {
         List<Deck> decks = Stream.generate(() -> Deck.shuffle(Card.BASIC_DECK)).limit(TESTING_DECKS).collect(Collectors.toList());
@@ -31,14 +31,15 @@ public class SaloonFriends {
                 .withJungle(genome -> test(decks, genome))
                 .withRitual(new MatingSeason<CheatingFriends>()
                         .killRandomlyLast(80, 10, () -> CheatingFriends.random(PLAYERS))
-                        .preserveBest(10)
+                        .preserveBest(5)
                         .breedBest(20, 40)
                         .mutateBest(10)
-                        .mutateBest(10)
+                        .mutateBest(15)
                         .mutateBest(30)
                         //.shuffleBest(20)
                 )
                 .withZoologists(new Zoologist())
+                .forGenerations(1000)
                 .create();
         pangea.start();
     }
