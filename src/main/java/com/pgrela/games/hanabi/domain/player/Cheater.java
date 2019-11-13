@@ -74,34 +74,41 @@ public class Cheater implements Player, GeneticCheater {
             return Turn.play(card);
         }
         if (table.areHintTokensAvailable()) {
+            boolean firstHintless = true;
             simulator.startSimulation();
+            int bestHint = 0, bestHintValue = 0;
+            OtherPlayer bestHintPlayer = null;
             for (OtherPlayer player : nextPlayers) {
-                if(cardsToBePlayed.get(player).isEmpty() && !canAnyDiscard(player.getHand().getKnownCards())) {
-                    for (int i = 0; i < genes.length; i++) {
-                        if (applies(player.getHand(), genes[i])) {
-                            simulator.rollbackAll();
-                            return turn(i, player);
-                        }
+                boolean hintIfPossible =false;
+                if(firstHintless){
+                    if(cardsToBePlayed.get(player).isEmpty()&& (!canAnyDiscard(player.getHand().getKnownCards()) && table.getAvailableHintTokens()==1)){
+                        firstHintless = false;
+                        hintIfPossible=true;
                     }
                 }
-                if (cardsToBePlayed.get(player).size() > 0) {
-                    simulator.simulateAdd(cardsToBePlayed.get(player).peekFirst());
-                }
-            }
-            simulator.rollbackAll();
-            simulator.startSimulation();
-            for (OtherPlayer player : nextPlayers) {
                 for (int i = 0; i < genes.length; i++) {
-                    if (applies(player.getHand(), genes[i])) {
-                        simulator.rollbackAll();
-                        return turn(i, player);
+                    int currentHint = hintValue(player.getHand(), genes[i]);
+                    if(currentHint>0 && hintIfPossible && bestHintPlayer!=player){
+                        bestHintValue=0;
                     }
+                    if (bestHintValue < currentHint) {
+                        bestHint = i;
+                        bestHintValue = currentHint;
+                        bestHintPlayer = player;
+                    }
+                }
+                if(hintIfPossible && player==bestHintPlayer){
+                    simulator.rollbackAll();
+                    return turn(bestHint, bestHintPlayer);
                 }
                 if (cardsToBePlayed.get(player).size() > 0) {
                     simulator.simulateAdd(cardsToBePlayed.get(player).peekFirst());
                 }
             }
             simulator.rollbackAll();
+            if(bestHintValue>0) {
+                return turn(bestHint, bestHintPlayer);
+            }
         }
         if (!cardsToDiscard.isEmpty()) {
             return Turn.discard(cardsToDiscard.pop());
@@ -110,7 +117,7 @@ public class Cheater implements Player, GeneticCheater {
                 .filter(card -> !hold.contains(card))
                 .filter(card -> !cardsToPlay.contains(card))
                 .findFirst()
-                .orElse(myHand.getCards().iterator().next())
+                .orElse(myHand.getCards().get(myHand.getCards().size()-1))
         );
     }
 
@@ -133,7 +140,7 @@ public class Cheater implements Player, GeneticCheater {
         return Number.ONE_TO_FIVE.indexOf(number) + Color.BASIC_COLORS.size();
     }
 
-    private int applies(SomeonesHand hand, CheaterGene gene) {
+    private int hintValue(SomeonesHand hand, CheaterGene gene) {
         int newInformation = 0;
         simulator.startSimulation();
         List<KnownCard> cards = hand.getKnownCards();
@@ -162,7 +169,7 @@ public class Cheater implements Player, GeneticCheater {
                     if (!discardedCards.contains(cards.get(i).value())) {
                         return 0;
                     }
-                    if(!held.contains(cards.get(i)))
+                    if (!held.contains(cards.get(i)))
                         ++newInformation;
                 }
             }
@@ -173,7 +180,7 @@ public class Cheater implements Player, GeneticCheater {
                 if (!table.getFireworks().contains(card)) {
                     return 0;
                 }
-                if(!discarding.contains(cards.get(i)))
+                if (!discarding.contains(cards.get(i)))
                     ++newInformation;
             }
         }
@@ -182,12 +189,12 @@ public class Cheater implements Player, GeneticCheater {
 
     @Override
     public void receiveHint(ColorHintToMe colorHint) {
-        acceptHint(((GeneticCheater)((ThePlayer)colorHint.getFromPlayer()).getPlayer()).genome().genes()[gene(colorHint.getColor())]);
+        acceptHint(((GeneticCheater) ((ThePlayer) colorHint.getFromPlayer()).getPlayer()).genome().genes()[gene(colorHint.getColor())]);
     }
 
     @Override
     public void receiveHint(NumberHintToMe numberHint) {
-        acceptHint(((GeneticCheater)((ThePlayer)numberHint.getFromPlayer()).getPlayer()).genome().genes()[gene(numberHint.getNumber())]);
+        acceptHint(((GeneticCheater) ((ThePlayer) numberHint.getFromPlayer()).getPlayer()).genome().genes()[gene(numberHint.getNumber())]);
     }
 
     private void acceptHint(CheaterGene gene) {
@@ -233,12 +240,12 @@ public class Cheater implements Player, GeneticCheater {
 
     @Override
     public void hintGiven(ColorHintToOtherPlayer colorHint) {
-        processHint(((GeneticCheater)((ThePlayer)colorHint.getFromPlayer()).getPlayer()).genome().genes()[gene(colorHint.getColor())], colorHint.getToPlayer());
+        processHint(((GeneticCheater) ((ThePlayer) colorHint.getFromPlayer()).getPlayer()).genome().genes()[gene(colorHint.getColor())], colorHint.getToPlayer());
     }
 
     @Override
     public void hintGiven(NumberHintToOtherPlayer numberHint) {
-        processHint(((GeneticCheater)((ThePlayer)numberHint.getFromPlayer()).getPlayer()).genome().genes()[gene(numberHint.getNumber())], numberHint.getToPlayer());
+        processHint(((GeneticCheater) ((ThePlayer) numberHint.getFromPlayer()).getPlayer()).genome().genes()[gene(numberHint.getNumber())], numberHint.getToPlayer());
     }
 
     @Override
