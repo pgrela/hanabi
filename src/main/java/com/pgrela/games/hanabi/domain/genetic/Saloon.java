@@ -30,7 +30,7 @@ public class Saloon {
         //System.out.println(test(decks, CheaterGenome.fromString("[--43,D41D,D5--,233H,3--4,44-H,--3-,5---,---4,-3-H]")));if(true)return;
         //System.out.println(test(decks, CheaterGenome.fromString("[-12-,-21-,21--,12--,--H-,---H,---1,--1-,1---,-1--]")));if(true)return;
         Pangea pangea = new PangeaBuilder<CheaterGenome>()
-                .withHerd(Stream.generate(CheaterGenome::random).limit(1000).collect(Collectors.toList()))
+                .withHerd(Stream.generate(CheaterGenome::random).limit(1100).collect(Collectors.toList()))
                 .withJungle(genome -> verify(decks, genome))
                 .withRitual(new MatingSeason<CheaterGenome>()
                         .killRandomlyLast(80, 20, CheaterGenome::random)

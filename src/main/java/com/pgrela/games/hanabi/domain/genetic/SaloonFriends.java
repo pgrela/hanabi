@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 public class SaloonFriends {
     private static final int PLAYERS = 4;
 
-    public static final int TESTING_DECKS = 10;
+    public static final int TESTING_DECKS = 100;
 
     public static void main(String[] args) {
         List<Deck> decks = Stream.generate(() -> Deck.shuffle(Card.BASIC_DECK)).limit(TESTING_DECKS).collect(Collectors.toList());
@@ -27,7 +27,7 @@ public class SaloonFriends {
         //System.out.println(test(decks, CheatingFriends.fromString("[--43,D41D,D5--,233H,3--4,44-H,--3-,5---,---4,-3-H]")));if(true)return;
         //System.out.println(test(decks, CheatingFriends.fromString("[-12-,-21-,21--,12--,--H-,---H,---1,--1-,1---,-1--]")));if(true)return;
         Pangea pangea = new PangeaBuilder<CheatingFriends>()
-                .withHerd(Stream.generate(() -> CheatingFriends.random(PLAYERS)).limit(100).collect(Collectors.toList()))
+                .withHerd(Stream.generate(() -> CheatingFriends.random(PLAYERS)).limit(1000).collect(Collectors.toList()))
                 .withJungle(genome -> test(decks, genome))
                 .withRitual(new MatingSeason<CheatingFriends>()
                         .killRandomlyLast(80, 10, () -> CheatingFriends.random(PLAYERS))
