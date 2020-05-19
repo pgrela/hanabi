@@ -26,7 +26,7 @@ public class Activation {
         }
 
         public double derivative(double inputSumPlusB) {
-            if (inputSumPlusB < 0 || inputSumPlusB > 1) return 0;
+            if (inputSumPlusB < 0 || inputSumPlusB > 1) return 1;
             return 1;
         }
 

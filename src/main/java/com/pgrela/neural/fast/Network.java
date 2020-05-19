@@ -7,7 +7,6 @@ import com.pgrela.neural.utils.Activation;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -36,11 +35,11 @@ public class Network {
     private int batch;
     private int batchNo = 0;
     private final double[][] expectedBiases;
-    private final double[][] biasessSensitivity;
+    private static double[][] biasessSensitivity;
     private final double[][][] expectedWeights;
-    private final double[][][] weightsSensitivity;
+    private static double[][][] weightsSensitivity;
     private final ActivationFunction innerFunction = Activation.SIGMA_1_0_1;
-    private final ActivationFunction outerFunction = Activation.SIGMA_1_0_1;
+    private final ActivationFunction outerFunction = Activation.SIGMA_0_1;
     private ExecutorService executorService;
     private Processor[] processors;
     private Learner[] learners;
@@ -316,9 +315,11 @@ public class Network {
                 double inputSumPlusB = inputSums[currentLayer][i] + biases[currentLayer][i];
                 double derivative = currentLayer == outputLayer ? outerFunction.derivative(inputSumPlusB) : innerFunction.derivative(inputSumPlusB);
                 double internalSensitivity = derivative * sensitivity[currentLayer][i];
+                //biasessSensitivity[currentLayer][i] = internalSensitivity;
                 expectedBiases[currentLayer][i] += (biases[currentLayer][i] - internalSensitivity * learningFactor);
                 for (int j = 0; j < layers[previousLayer]; j++) {
                     double weightSensitivity = internalSensitivity * values[previousLayer][j];
+                    //weightsSensitivity[previousLayer][j][i] = weightSensitivity;
                     sensitivity[previousLayer][j] += internalSensitivity * weights[previousLayer][j][i];
                     expectedWeights[previousLayer][j][i] += (weights[previousLayer][j][i] - weightSensitivity * learningFactor);
                 }

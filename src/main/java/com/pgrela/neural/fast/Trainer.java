@@ -1,6 +1,7 @@
 package com.pgrela.neural.fast;
 
 import com.pgrela.neural.fast.Network.Processor;
+import com.pgrela.neural.utils.Utils;
 
 import java.io.File;
 import java.util.concurrent.ExecutionException;
@@ -79,19 +80,7 @@ public class Trainer {
     }
 
     static boolean isCorrect(double[] actual, double[] expected) {
-        return maxIndex(expected) == maxIndex(actual);
-    }
-
-    private static int maxIndex(double[] list) {
-        int guess = -1;
-        double max = -10;
-        for (int j = 0; j < 10; j++) {
-            if (list[j] > max) {
-                guess = j;
-                max = list[j];
-            }
-        }
-        return guess;
+        return Utils.maxIndex(expected) == Utils.maxIndex(actual);
     }
 
 
