@@ -24,13 +24,13 @@ import static com.pgrela.neural.fast.Trainer.isCorrect;
 
 public class Network {
     private int nThreads;
-    private double[][] biases;
-    private double[][][] weights;
+    protected double[][] biases;
+    protected double[][][] weights;
     private double[][] values;
     private double[][] sensitivity;
     private double[][] inputSums;
     private double learningFactor;
-    private int[] layers;
+    protected int[] layers;
     private int outputLayer;
     private int batch;
     private int batchNo = 0;

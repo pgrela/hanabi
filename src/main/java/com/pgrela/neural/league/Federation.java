@@ -2,10 +2,12 @@ package com.pgrela.neural.league;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 public class Federation {
 
     private Idiot[] idiots;
+    private Random chaos = new Random(56444);
 
     private League[] leagues;
 
@@ -76,6 +78,7 @@ public class Federation {
         Arrays.stream(leagues).parallel().forEach(league -> {
             league.playSeason(rounds);
             league.tourWinner();
+            league.chaos(chaos);
         });
     }
 }

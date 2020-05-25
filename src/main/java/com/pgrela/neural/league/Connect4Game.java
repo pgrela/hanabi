@@ -5,6 +5,7 @@ import com.pgrela.games.engine.connect4.Connect4Move;
 import com.pgrela.games.engine.connect4.game.MagicBoard;
 import com.pgrela.games.engine.connect4.game.MagicBoardEvaluator;
 import com.pgrela.neural.utils.Utils;
+import java.util.Random;
 
 import static com.pgrela.neural.league.Connect4NetworkPlayer.INPUT_SIZE;
 
@@ -98,7 +99,13 @@ public class Connect4Game {
     }
 
     public Connect4Move asMove(double[] output) {
-        return Connect4Move.getMove(Utils.maxIndex(output));
+        double[] s=new double[output.length];
+        for (int i = 0; i < output.length; i++) {
+            s[i]=isLegal(Connect4Move.getMove(i))?output[i]:-1;
+        }
+        int max = Utils.maxIndex(s);
+        if(new Random().nextInt(40)==0)s[max]=-.1;
+        return Connect4Move.getMove(Utils.maxIndex(s));
     }
 
     public int playedMoves() {

@@ -91,6 +91,7 @@ public class Stadium {
 
     private void teachLooser(Connect4NetworkPlayer player) {
         if (!learning) return;
+        if(true)return;
         double[] output = new double[OUTPUT_SIZE];
         for (int i = 0; i < movesRecorded; i++) {
             HistoricalMove move = moves[i];
@@ -140,7 +141,7 @@ public class Stadium {
 
     public static final double LOWEST_LEARNING_FACTOR = .00001;
     public static final double HIGHEST_LEARNING_FACTOR = .01;
-    public static final double LEARNING_FACTOR_DESCENT = .6;
+    public static final double LEARNING_FACTOR_DESCENT = .95;
     private static final double[] SIGNIFICANCES = IntStream.range(0, MAX_MOVES).mapToDouble(i -> Math.max(LOWEST_LEARNING_FACTOR, HIGHEST_LEARNING_FACTOR * Math.pow(LEARNING_FACTOR_DESCENT, i))).toArray();
 
     private double significance(int move) {

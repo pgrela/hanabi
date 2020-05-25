@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 
@@ -114,4 +115,10 @@ public class League {
         networks.addAll(newbies);
     }
 
+    public void chaos(Random chaos) {
+        for (int i = 0; i < ranked.size(); i++) {
+            ranked.get(i).getKey().chaos(chaos, i/2);
+        }
+
+    }
 }
